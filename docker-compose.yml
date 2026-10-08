@@ -1,0 +1,111 @@
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: Dockerfile.airflow
+  environment:
+    - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+    - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+    - AIRFLOW__CORE__FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WwLbfzqDDho=
+    - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
+    - AIRFLOW__CORE__LOAD_EXAMPLES=false
+    - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=true
+    - "YANDEX_WEATHER_KEY=3a74633b-d25c-4e20-b8a0-9b43ac65113c"
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    - ./scripts:/opt/airflow/scripts
+    - ./data:/opt/airflow/data
+    - ./dbt:/opt/airflow/dbt
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username admin \
+          --firstname Admin \
+          --lastname User \
+          --role Admin \
+          --email admin@example.com \
+          --password admin
+        echo "Airflow initialized"
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8082:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      retries: 5
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    ports:
+      - "8125:8123"
+      - "9002:9000"
+    environment:
+      - CLICKHOUSE_USER=admin
+      - CLICKHOUSE_PASSWORD=admin123
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    ports:
+      - "8333:8333"
+      - "9333:9333"
+      - "8888:8888"
+    command: "server -s3 -dir=/data"
+    volumes:
+      - seaweedfs_data:/data
+
+  superset:
+    image: apache/superset:3.1.0
+    ports:
+      - "8088:8088"
+    environment:
+      - SUPERSET_SECRET_KEY=my_secret_key_change_me
+      - SUPERSET_LOAD_EXAMPLES=no
+    volumes:
+      - superset_home:/app/superset_home
+    command: >
+      /bin/sh -c "
+      superset db upgrade &&
+      superset fab create-admin --username admin --firstname Admin --lastname User --email admin@example.com --password admin &&
+      superset init &&
+      /usr/bin/run-server.sh
+      "
+
+volumes:
+  postgres_data:
+  clickhouse_data:
+  seaweedfs_data:
+  superset_home:
