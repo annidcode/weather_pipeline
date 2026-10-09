@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: stg_yandex_current
+    columns:
+      - name: city
+        tests:
+          - not_null
+      - name: temp
+        tests:
+          - not_null
+
+  - name: stg_openmeteo_history
+    columns:
+      - name: city
+        tests:
+          - not_null
+      - name: date
+        tests:
+          - not_null

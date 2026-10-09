@@ -1,0 +1,14 @@
+weather_pipeline:
+  target: dev
+  outputs:
+    dev:
+      type: clickhouse
+      schema: weather
+      host: "{{ env_var('CH_HOST', 'localhost') }}"
+      port: "{{ env_var('CH_PORT', '9002') | int }}"
+      user: admin
+      password: admin123
+      secure: false
+      driver: native
+      threads: 4
+      retries: 1
