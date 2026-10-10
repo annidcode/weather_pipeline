@@ -9,3 +9,4 @@ data/
 *.log
 .DS_Store
 .ipynb_checkpoints/
+superset_config.py
