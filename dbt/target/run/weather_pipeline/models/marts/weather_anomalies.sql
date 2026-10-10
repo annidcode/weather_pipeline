@@ -9,7 +9,7 @@
         
   
 
-  insert into `weather_marts`.`weather_anomalies`
+  insert into `weather_marts`.`weather_anomalies__dbt_backup`
         ("city", "date", "temp_mean", "avg_temp", "std_temp", "z_score", "flag")
 
 WITH stats AS (

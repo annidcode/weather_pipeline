@@ -9,7 +9,7 @@
         
   
 
-  insert into `weather_marts`.`city_summary`
+  insert into `weather_marts`.`city_summary__dbt_backup`
         ("city", "latitude", "longitude", "days_count", "avg_temp", "min_temp", "max_temp", "total_precipitation", "avg_wind", "max_gust")
 
 SELECT

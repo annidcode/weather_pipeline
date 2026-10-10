@@ -63,6 +63,7 @@ def load_current(s3, ch):
     ch.command("""
     CREATE TABLE raw_weather_current (
         city String,
+        region String,
         latitude Float64,
         longitude Float64,
         population UInt64,
@@ -82,7 +83,7 @@ def load_current(s3, ch):
         magnetic_field Nullable(Int32)
     )
     ENGINE = MergeTree()
-    ORDER BY (city, timestamp)
+    ORDER BY (region, city, timestamp) 	 
     """)
     ch.insert_df('raw_weather_current', df)
     print(f"Загружено {len(df)} строк в raw_weather_current")
@@ -105,6 +106,7 @@ def load_history(s3, ch):
     ch.command("""
     CREATE TABLE raw_weather_history (
         city String,
+	region String,
         latitude Float64,
         longitude Float64,
         date Date,
@@ -116,7 +118,7 @@ def load_history(s3, ch):
         wind_gusts_max Float32
     )
     ENGINE = MergeTree()
-    ORDER BY (city, date)
+    ORDER BY (region, city, date)
     """)
     ch.insert_df('raw_weather_history', df)
     print(f"Загружено {len(df)} строк в raw_weather_history")

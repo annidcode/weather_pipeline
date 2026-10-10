@@ -9,7 +9,7 @@
         
   
 
-  insert into `weather_marts`.`daily_weather`
+  insert into `weather_marts`.`daily_weather__dbt_backup`
         ("city", "date", "temp_max", "temp_min", "temp_mean", "precipitation", "wind_speed_max", "wind_gusts_max", "temp_mean_7d", "temp_anomaly")
 
 SELECT

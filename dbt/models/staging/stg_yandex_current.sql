@@ -2,6 +2,7 @@
 
 SELECT
     city,
+    region,
     latitude,
     longitude,
     population,
@@ -20,4 +21,3 @@ SELECT
     cloudness,
     magnetic_field
 FROM {{ source('raw', 'raw_weather_current') }}
-

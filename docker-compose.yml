@@ -88,14 +88,18 @@ services:
       - seaweedfs_data:/data
 
   superset:
-    image: apache/superset:3.1.0
+    build:
+      context: .
+      dockerfile: Dockerfile.superset
     ports:
       - "8088:8088"
     environment:
       - SUPERSET_SECRET_KEY=my_secret_key_change_me
       - SUPERSET_LOAD_EXAMPLES=no
+      - SUPERSET_CONFIG_PATH=/app/superset_config.py
     volumes:
       - superset_home:/app/superset_home
+      - ./superset_config.py:/app/superset_config.py
     command: >
       /bin/sh -c "
       superset db upgrade &&
@@ -103,9 +107,25 @@ services:
       superset init &&
       /usr/bin/run-server.sh
       "
+  grafana:
+    image: grafana/grafana:10.4.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=volkovlabs-echarts-panel
+      - GF_PLUGINS_PLUGIN_ADMIN_ENABLED=true
+      - GF_PLUGINS_APP_TLS_SKIP_VERIFY_INSECURE=true
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana.ini:/etc/grafana/grafana.ini
+    depends_on:
+      - clickhouse
 
 volumes:
   postgres_data:
   clickhouse_data:
   seaweedfs_data:
   superset_home:
+  grafana_data:

@@ -8,7 +8,7 @@ from io import BytesIO
 
 S3_ENDPOINT = os.environ.get('S3_ENDPOINT', 'http://localhost:8333')
 S3_BUCKET = 'weather-raw'
-CITIES_FILE = os.environ.get('CITIES_FILE', '/opt/airflow/data/cities.csv')
+CITIES_FILE = os.environ.get('CITIES_FILE', '/opt/airflow/data/cities_with_regions.csv')
 LOCAL_OUTPUT = os.environ.get('LOCAL_OUTPUT', '/opt/airflow/data/weather_history.csv')
 
 HISTORY_DAYS = 365
@@ -89,6 +89,7 @@ def main():
             for j, d in enumerate(dates):
                 all_rows.append({
                     'city': row['name'],
+		    'region': row['region'],
                     'latitude': row['latitude'],
                     'longitude': row['longitude'],
                     'date': d,

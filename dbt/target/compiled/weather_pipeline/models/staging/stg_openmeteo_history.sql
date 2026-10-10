@@ -2,6 +2,7 @@
 
 SELECT
     city,
+    region,
     latitude,
     longitude,
     date,

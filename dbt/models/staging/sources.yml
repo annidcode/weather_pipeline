@@ -6,3 +6,4 @@ sources:
     tables:
       - name: raw_weather_current
       - name: raw_weather_history
+      - name: raw_weather_forecast
