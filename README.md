@@ -16,10 +16,11 @@ https://github.com/annidcode/weather_pipeline/raw/main/docs/demo.mp4
 
 ## Архитектура
 
-Яндекс.Погода API Open-Meteo API
+Яндекс.Погода API +  Open-Meteo API
+
 ↓
  
-Текущая + прогноз 5д История за год
+Текущая погода + Прогноз 5 дней +  История за год
 
 ↓
 
@@ -39,7 +40,7 @@ Grafana
 
 ↓
 
-Airflow (ежедневный запуск в 6:00 МСК)
+Airflow (ежедневный запуск в 9:00 МСК)
 
 ## Стек
 
@@ -119,7 +120,7 @@ fetch_yandex → load_to_clickhouse → load_forecast_to_clickhouse → dbt_run 
 
 - **Retries:** 2 попытки через 5 минут.
 - **Max active runs:** 1.
-- **Автообновление данных:** каждый день в 6:00 МСК.
+- **Автообновление данных:** каждый день в 9:00 МСК.
 
 ## Ключевые концепции
 
