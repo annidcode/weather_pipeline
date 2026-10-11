@@ -10,6 +10,8 @@ YANDEX_KEY = os.environ.get('YANDEX_WEATHER_KEY')
 S3_ENDPOINT = os.environ.get('S3_ENDPOINT', 'http://localhost:8333')
 S3_BUCKET = 'weather-raw'
 CITIES_FILE = os.environ.get('CITIES_FILE', '/opt/airflow/data/cities_with_regions.csv')
+LOCAL_OUTPUT = os.environ.get('LOCAL_OUTPUT', '/opt/airflow/data/weather_current.csv')
+LOCAL_FORECAST = os.environ.get('LOCAL_FORECAST', '/opt/airflow/data/weather_forecast.csv')
 
 if not YANDEX_KEY:
     raise RuntimeError("YANDEX_WEATHER_KEY не задан")
@@ -75,7 +77,7 @@ def main():
                 'magnetic_field': data.get('forecasts', [{}])[0].get('biomet', {}).get('index'),
             })
 
-            # Прогноз на 5 дней
+            # Прогноз
             for forecast in data.get('forecasts', []):
                 parts = forecast.get('parts', {})
                 day = parts.get('day', {})
@@ -100,7 +102,7 @@ def main():
             print(f"Error for {row['name']}: {e}")
 
         if (i + 1) % 50 == 0:
-            print(f"Обработано {i+1}/{len(df)}")
+            print(f"Обработано {i+1}/{len(df)} (успешно: {len(rows_current)}, ошибок: {errors})")
 
         time.sleep(0.15)
 
@@ -111,29 +113,30 @@ def main():
     print(f"Прогноз: {len(df_forecast)} строк")
     print(f"Ошибок: {errors}")
 
-    # Текущая погода → S3
+    if len(df_current) == 0:
+        raise RuntimeError("Нет данных для сохранения")
+
+    # S3: текущая погода
     key_current = f"yandex/current/dt={date_str}/weather_{date_str}_{time_str}.parquet"
     buffer = BytesIO()
     df_current.to_parquet(buffer, index=False)
     buffer.seek(0)
     s3.put_object(Bucket=S3_BUCKET, Key=key_current, Body=buffer.getvalue())
-    print(f"Текущая погода: s3://{S3_BUCKET}/{key_current}")
+    print(f"Текущая погода → s3://{S3_BUCKET}/{key_current}")
 
-    # Прогноз → S3
+    # S3: прогноз
     key_forecast = f"yandex/forecast/dt={date_str}/forecast_{date_str}_{time_str}.parquet"
     buffer = BytesIO()
     df_forecast.to_parquet(buffer, index=False)
     buffer.seek(0)
     s3.put_object(Bucket=S3_BUCKET, Key=key_forecast, Body=buffer.getvalue())
-    print(f"Прогноз: s3://{S3_BUCKET}/{key_forecast}")
+    print(f"Прогноз → s3://{S3_BUCKET}/{key_forecast}")
 
     # Локально
-    local_current = os.environ.get('LOCAL_OUTPUT', '/opt/airflow/data/weather_current.csv')
-    local_forecast = os.environ.get('LOCAL_FORECAST', '/opt/airflow/data/weather_forecast.csv')
-    os.makedirs(os.path.dirname(local_current), exist_ok=True)
-    df_current.to_csv(local_current, index=False)
-    df_forecast.to_csv(local_forecast, index=False)
-    print(f"Локально: {local_current}, {local_forecast}")
+    os.makedirs(os.path.dirname(LOCAL_OUTPUT), exist_ok=True)
+    df_current.to_csv(LOCAL_OUTPUT, index=False)
+    df_forecast.to_csv(LOCAL_FORECAST, index=False)
+    print(f"Локально: {LOCAL_OUTPUT} ({len(df_current)} строк), {LOCAL_FORECAST} ({len(df_forecast)} строк)")
 
 
 if __name__ == '__main__':
